@@ -1,0 +1,32 @@
+{
+  "//": "라이선스 미확정 폰트는 enabled:false 유지 (불변 제약 C6, 오픈 이슈 O1/O2). files의 woff2가 실제 존재할 때만 @font-face가 임베드되고, 없으면 fallback 스택으로 렌더된다.",
+  "fonts": [
+    { "id": "kopub-batang", "name": "KoPubWorld 바탕", "category": "명조", "enabled": true,
+      "files": { "400": "KoPubWorldBatang-Regular.woff2", "700": "KoPubWorldBatang-Bold.woff2" },
+      "fallback": "'KoPubWorld Batang', 'Batang', 'Noto Serif KR', serif" },
+    { "id": "nanum-myeongjo", "name": "나눔명조", "category": "명조", "enabled": true,
+      "files": { "400": "NanumMyeongjo-Regular.woff2", "700": "NanumMyeongjo-Bold.woff2" },
+      "fallback": "'NanumMyeongjo', 'Nanum Myeongjo', 'Batang', serif" },
+    { "id": "noto-serif-kr", "name": "Noto Serif KR", "category": "명조", "enabled": true,
+      "files": { "400": "NotoSerifKR-Regular.woff2", "700": "NotoSerifKR-Bold.woff2" },
+      "fallback": "'Noto Serif KR', 'Batang', serif" },
+    { "id": "kopub-dotum", "name": "KoPubWorld 돋움", "category": "고딕", "enabled": true,
+      "files": { "400": "KoPubWorldDotum-Regular.woff2", "700": "KoPubWorldDotum-Bold.woff2" },
+      "fallback": "'KoPubWorld Dotum', 'Malgun Gothic', 'Noto Sans KR', sans-serif" },
+    { "id": "pretendard", "name": "Pretendard", "category": "고딕", "enabled": true,
+      "files": { "400": "Pretendard-Regular.woff2", "700": "Pretendard-Bold.woff2" },
+      "fallback": "'Pretendard', 'Malgun Gothic', sans-serif" },
+    { "id": "nanum-gothic", "name": "나눔고딕", "category": "고딕", "enabled": true,
+      "files": { "400": "NanumGothic-Regular.woff2", "700": "NanumGothic-Bold.woff2" },
+      "fallback": "'NanumGothic', 'Nanum Gothic', 'Malgun Gothic', sans-serif" },
+    { "id": "paperlogy", "name": "Paperlogy", "category": "고딕", "enabled": true,
+      "files": { "400": "Paperlogy-4Regular.woff2", "700": "Paperlogy-7Bold.woff2" },
+      "fallback": "'Paperlogy', 'Malgun Gothic', sans-serif" },
+    { "id": "presentation", "name": "프리젠테이션체", "category": "제목", "enabled": false,
+      "files": {}, "fallback": "'Malgun Gothic', sans-serif",
+      "note": "배포 라이선스·정확한 폰트명 확인 전 (O2)" },
+    { "id": "hamchorom-dotum", "name": "함초롬돋움", "category": "고딕", "enabled": false,
+      "files": {}, "fallback": "'Hancom Gothic', 'Malgun Gothic', sans-serif",
+      "note": "웹 배포/PDF 임베딩 라이선스 미확정 (O1, C6)" }
+  ]
+}

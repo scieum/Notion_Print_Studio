@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DESIGN.md 디자인 토큰 — 앱 화면(chrome) 전용. 인쇄물 스타일은 양식 시스템이 별도로 결정. */
+:root {
+  --bg: #ffffff;
+  --fg: rgba(0, 0, 0, 0.95); /* 순수 #000 금지 — 웜 니어블랙 */
+  --surface: #f6f5f4;
+  --muted: #615d59;
+  --placeholder: #a39e98;
+  --border: rgba(0, 0, 0, 0.1); /* 속삭임 보더 */
+  /* Notion Blue — DESIGN.md의 #5c5c5c는 무채색이라 오기로 판단, Focus Blue 계열 사용 */
+  --accent: #097fe8;
+  --accent-fg: #ffffff;
+  --shadow-card: rgba(0, 0, 0, 0.04) 0px 4px 18px, rgba(0, 0, 0, 0.027) 0px 2.025px 7.85px,
+    rgba(0, 0, 0, 0.02) 0px 0.8px 2.93px, rgba(0, 0, 0, 0.01) 0px 0.175px 1.04px;
+}
+
+.dark {
+  --bg: #150f0f;
+  --fg: #fafafa;
+  --surface: #2a2222;
+  --muted: #a39e98;
+  --placeholder: #6f6862;
+  --border: #322929;
+  --shadow-card: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-feature-settings: 'lnum', 'locl';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 밑줄 스타일 인풋 (DESIGN.md — bottom border만) */
+.input-underline {
+  @apply w-full bg-transparent border-0 border-b-2 rounded-none px-0 py-1.5 text-sm outline-none transition-colors;
+  border-bottom-color: var(--border);
+}
+.input-underline:focus {
+  border-bottom-color: var(--accent);
+}
+.input-underline::placeholder {
+  color: var(--placeholder);
+}
+
+.btn-primary {
+  @apply inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-semibold transition-colors;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.btn-primary:hover {
+  filter: brightness(0.92);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium border transition-colors;
+  border-color: var(--border);
+  color: var(--fg);
+  background: transparent;
+}
+.btn-secondary:hover {
+  background: var(--surface);
+}
+
+.card {
+  @apply rounded-xl border bg-bg;
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+}

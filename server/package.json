@@ -1,0 +1,20 @@
+{
+  "name": "@nps/server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@nps/shared": "*",
+    "better-sqlite3": "^11.5.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "katex": "^0.16.11",
+    "puppeteer": "^23.9.0",
+    "zod": "^3.23.8"
+  }
+}
