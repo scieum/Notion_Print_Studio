@@ -46,8 +46,8 @@ router.get('/auth/notion', (req, res) => {
 router.get('/auth/notion/callback', async (req, res, next) => {
   try {
     const { code, state, error } = req.query;
-    if (error || !code) return res.redirect('/?connect_error=1');
-    if (!state || state !== req.cookies?.oauth_state) return res.redirect('/?connect_error=state');
+    if (error || !code) return res.redirect(config.clientUrl + '/?connect_error=1');
+    if (!state || state !== req.cookies?.oauth_state) return res.redirect(config.clientUrl + '/?connect_error=state');
     res.clearCookie('oauth_state');
 
     const tokenRes = await exchangeCode(code);
@@ -64,7 +64,7 @@ router.get('/auth/notion/callback', async (req, res, next) => {
     });
 
     res.cookie('sid', createSession(user.id), SESSION_COOKIE);
-    res.redirect('/');
+    res.redirect(config.clientUrl);
   } catch (err) {
     next(err);
   }

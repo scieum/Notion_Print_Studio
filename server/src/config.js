@@ -15,6 +15,8 @@ export const FONTS_DIR = path.join(ROOT_DIR, 'fonts');
 
 export const config = {
   port: Number(process.env.PORT || 3001),
+  // OAuth 완료 후 돌아갈 클라이언트 주소 (개발: Vite dev 서버 / 프로덕션: 같은 오리진)
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:5174',
   notion: {
     clientId: process.env.NOTION_CLIENT_ID || '',
     clientSecret: process.env.NOTION_CLIENT_SECRET || '',
