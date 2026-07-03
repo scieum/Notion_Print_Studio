@@ -15,6 +15,8 @@ export const PRESET_GONGMUN = {
     h3: { size: 12, weight: 600, spaceBefore: 6, spaceAfter: 3, numbering: 'hangul' },
   },
   options: { toggleExpand: true, columnStack: true, pageNumber: true },
+  hf: { headerLeft: '', headerCenter: '', headerRight: '', footerLeft: '', footerCenter: '', footerRight: '',
+        fontSize: 9, pageNumberFormat: 'dash' },
 };
 
 export const PRESET_REPORT = {
@@ -32,6 +34,8 @@ export const PRESET_REPORT = {
     h3: { size: 12, weight: 600, spaceBefore: 8, spaceAfter: 4, numbering: 'decimal' },
   },
   options: { toggleExpand: true, columnStack: true, pageNumber: true },
+  hf: { headerLeft: '', headerCenter: '', headerRight: '{title}', footerLeft: '', footerCenter: '', footerRight: '',
+        fontSize: 9, pageNumberFormat: 'fraction' },
 };
 
 export const PRESET_WORKSHEET = {
@@ -49,6 +53,8 @@ export const PRESET_WORKSHEET = {
     h3: { size: 13, weight: 600, spaceBefore: 8, spaceAfter: 4, numbering: 'none' },
   },
   options: { toggleExpand: true, columnStack: true, pageNumber: false },
+  hf: { headerLeft: '{title}', headerCenter: '', headerRight: '{date}', footerLeft: '', footerCenter: '', footerRight: '',
+        fontSize: 9, pageNumberFormat: 'decimal' },
 };
 
 export const SYSTEM_PRESETS = [PRESET_GONGMUN, PRESET_REPORT, PRESET_WORKSHEET];

@@ -6,6 +6,7 @@ import { normalizeBlocks } from '../normalize/normalizer.js';
 import { getCachedPage, setCachedPage } from '../cache/blockCache.js';
 import { cacheImage } from '../cache/imageCache.js';
 import { getDocSettings } from '../db/dao.js';
+import { validateTemplate } from '@nps/shared';
 
 const router = Router();
 
@@ -52,6 +53,11 @@ router.post('/api/pages/fetch', requireAuth, async (req, res, next) => {
     if (!pageId) return res.status(400).json({ error: 'pageId required' });
     const { title, blocks } = await getNormalizedPage(req.user, req.notionToken, pageId);
     const saved = getDocSettings(req.user.id, pageId);
+    // 저장 당시 스키마가 달라도 기본값이 채워진 형태로 복원
+    if (saved?.override) {
+      const v = validateTemplate(saved.override);
+      saved.override = v.ok ? v.template : null;
+    }
     res.json({
       title,
       blockCount: blocks.length,

@@ -6,7 +6,10 @@ export default function SettingsPanel({ template, onChange }) {
     const next = structuredClone(template);
     let obj = next;
     const keys = path.split('.');
-    for (const key of keys.slice(0, -1)) obj = obj[key];
+    for (const key of keys.slice(0, -1)) {
+      if (!obj[key]) obj[key] = {}; // 구버전 양식에 없는 섹션(hf 등) 대비
+      obj = obj[key];
+    }
     obj[keys.at(-1)] = value;
     onChange(next);
   };
@@ -109,11 +112,57 @@ export default function SettingsPanel({ template, onChange }) {
                   <option value="roman">I. II. III.</option>
                   <option value="decimal">1. 2. 3.</option>
                   <option value="hangul">가. 나. 다.</option>
+                  <option value="nested">1.1.1.</option>
                 </select>
               </label>
             </div>
           </div>
         ))}
+      </Section>
+
+      <Section title="머리말 / 꼬리말">
+        <p className="text-[11px] text-placeholder leading-relaxed">
+          {'{page}'} 쪽번호, {'{total}'} 전체 쪽수, {'{title}'} 문서 제목, {'{date}'} 인쇄 날짜
+        </p>
+        {[
+          ['머리말', 'header'],
+          ['꼬리말', 'footer'],
+        ].map(([label, prefix]) => (
+          <div key={prefix}>
+            <p className="text-xs font-semibold text-muted mb-1">{label}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ['Left', '왼쪽'],
+                ['Center', '가운데'],
+                ['Right', '오른쪽'],
+              ].map(([pos, posLabel]) => (
+                <label key={pos} className="block">
+                  <span className="text-[11px] text-placeholder block">{posLabel}</span>
+                  <input
+                    className="input-underline"
+                    value={template.hf?.[`${prefix}${pos}`] ?? ''}
+                    onChange={(e) => set(`hf.${prefix}${pos}`, e.target.value)}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div className="grid grid-cols-2 gap-2">
+          <Row label="글자 크기 (pt)">
+            <input type="number" min="6" max="14" className="input-underline"
+              value={template.hf?.fontSize ?? 9}
+              onChange={(e) => num('hf.fontSize', e.target.value)} />
+          </Row>
+          <Row label="쪽번호 표기">
+            <select className="input-underline" value={template.hf?.pageNumberFormat ?? 'dash'}
+              onChange={(e) => set('hf.pageNumberFormat', e.target.value)}>
+              <option value="decimal">1</option>
+              <option value="dash">- 1 -</option>
+              <option value="fraction">1 / N</option>
+            </select>
+          </Row>
+        </div>
       </Section>
 
       <Section title="문서 옵션">

@@ -59,6 +59,56 @@ export function templateToCssVars(t) {
     .join('\n  ');
 }
 
+/**
+ * 머리말/꼬리말 → Puppeteer headerTemplate/footerTemplate (오픈 이슈 O6 구현).
+ * 자리표시자: {page} {total} {title} {date}
+ * options.pageNumber=true인데 아무 필드에도 {page}가 없으면
+ * hf.pageNumberFormat에 따라 꼬리말 가운데에 쪽번호를 자동 삽입한다.
+ */
+export function buildHeaderFooter(template, title = '') {
+  const hf = template.hf || {};
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const sub = (text) =>
+    esc(text)
+      .replaceAll('{page}', '<span class="pageNumber"></span>')
+      .replaceAll('{total}', '<span class="totalPages"></span>')
+      .replaceAll('{title}', esc(title))
+      .replaceAll('{date}', '<span class="date"></span>');
+
+  const fields = {
+    headerLeft: hf.headerLeft || '', headerCenter: hf.headerCenter || '', headerRight: hf.headerRight || '',
+    footerLeft: hf.footerLeft || '', footerCenter: hf.footerCenter || '', footerRight: hf.footerRight || '',
+  };
+
+  const hasPageToken = Object.values(fields).some((v) => v.includes('{page}'));
+  if (template.options?.pageNumber && !hasPageToken && !fields.footerCenter) {
+    fields.footerCenter = {
+      decimal: '{page}',
+      dash: '- {page} -',
+      fraction: '{page} / {total}',
+    }[hf.pageNumberFormat || 'dash'];
+  }
+
+  const fontSize = hf.fontSize || 9;
+  // Chromium 머리말/꼬리말은 스타일 상속이 없어 전부 인라인으로 지정해야 한다
+  const bar = (left, center, right) =>
+    `<div style="width:100%; font-size:${fontSize}pt; color:#444; padding:0 10mm;
+        display:flex; align-items:center; font-family:'Malgun Gothic',sans-serif;">
+       <span style="flex:1; text-align:left;">${sub(left)}</span>
+       <span style="flex:1; text-align:center;">${sub(center)}</span>
+       <span style="flex:1; text-align:right;">${sub(right)}</span>
+     </div>`;
+
+  const hasHeader = fields.headerLeft || fields.headerCenter || fields.headerRight;
+  const hasFooter = fields.footerLeft || fields.footerCenter || fields.footerRight;
+
+  return {
+    displayHeaderFooter: !!(hasHeader || hasFooter),
+    headerTemplate: hasHeader ? bar(fields.headerLeft, fields.headerCenter, fields.headerRight) : '<span></span>',
+    footerTemplate: hasFooter ? bar(fields.footerLeft, fields.footerCenter, fields.footerRight) : '<span></span>',
+  };
+}
+
 /** 용지 크기 → Puppeteer page.pdf() 옵션 (여백은 mm로 전달) */
 export function pdfPageOptions(t) {
   const sizes = {

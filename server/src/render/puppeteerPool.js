@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer';
 import { config } from '../config.js';
 import { RenderQueue } from './queue.js';
-import { pdfPageOptions } from './cssVars.js';
+import { pdfPageOptions, buildHeaderFooter } from './cssVars.js';
 
 /**
  * 상주 브라우저 1개 + 렌더 큐 (확정 사양: Express 내장, 동시성 1~2 + 인메모리 큐).
@@ -27,27 +27,24 @@ async function getBrowser() {
  * HTML → PDF 버퍼. preview=true면 저해상도(스케일 축소)로 빠르게.
  * TODO(설계서 §9): preview는 페이지별 PNG 목록으로 교체 예정 — 초안은 PDF를 iframe으로 표시.
  */
-export function renderPdf({ html, template, preview = false, footerTitle = '' }) {
+export function renderPdf({ html, template, preview = false, title = '' }) {
   return queue.add(async () => {
     const browser = await getBrowser();
     const page = await browser.newPage();
     try {
       await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
       const pageOpts = pdfPageOptions(template);
-      const showPageNumber = !!template.options?.pageNumber;
-      return await page.pdf({
+      const hf = buildHeaderFooter(template, title); // 머리말/꼬리말/쪽번호 (O6)
+      // Puppeteer 22+는 Uint8Array를 반환 — 매직바이트 검증/전송을 위해 Buffer로 변환
+      return Buffer.from(await page.pdf({
         ...pageOpts,
         printBackground: true,
         preferCSSPageSize: false,
         scale: preview ? 0.9 : 1,
-        displayHeaderFooter: showPageNumber,
-        headerTemplate: '<span></span>',
-        footerTemplate: showPageNumber
-          ? `<div style="width:100%; text-align:center; font-size:8pt; color:#444;">
-               <span class="pageNumber"></span> / <span class="totalPages"></span>
-             </div>`
-          : '<span></span>',
-      });
+        displayHeaderFooter: hf.displayHeaderFooter,
+        headerTemplate: hf.headerTemplate,
+        footerTemplate: hf.footerTemplate,
+      }));
     } finally {
       await page.close().catch(() => {});
     }

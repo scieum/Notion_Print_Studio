@@ -36,7 +36,7 @@ async function handleRender(req, res, next, kind) {
       title, blocks, template,
       baseUrl: `http://localhost:${config.port}`, // Puppeteer가 캐시 이미지에 접근하는 내부 URL
     });
-    const pdf = await renderPdf({ html, template, preview: kind === 'preview' });
+    const pdf = await renderPdf({ html, template, preview: kind === 'preview', title });
 
     // PDF 헤더 매직바이트 검증 (설계서 §11 단계 8)
     if (pdf.length < 5 || pdf.subarray(0, 5).toString('latin1') !== '%PDF-') {

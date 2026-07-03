@@ -6,7 +6,11 @@ import { listTemplates, createTemplate, updateTemplate, deleteTemplate } from '.
 const router = Router();
 
 router.get('/api/templates', requireAuth, (req, res) => {
-  const all = listTemplates(req.user.id);
+  // 구버전 style_json도 스키마 기본값(hf 등)이 채워진 형태로 내려준다
+  const all = listTemplates(req.user.id).map((t) => {
+    const v = validateTemplate(t.style);
+    return v.ok ? { ...t, style: v.template } : t;
+  });
   res.json({
     presets: all.filter((t) => t.isPreset),
     mine: all.filter((t) => !t.isPreset),

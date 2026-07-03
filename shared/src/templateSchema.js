@@ -15,8 +15,26 @@ const headingSchema = z.object({
   weight: z.number().int().min(100).max(900).default(700),
   spaceBefore: z.number().min(0).max(60).default(0), // pt
   spaceAfter: z.number().min(0).max(60).default(0), // pt
-  numbering: z.enum(['roman', 'decimal', 'hangul', 'none']).default('none'),
+  // nested = 1. / 1.1. / 1.1.1. 다단계 번호 (설계서 §7.1)
+  numbering: z.enum(['roman', 'decimal', 'hangul', 'nested', 'none']).default('none'),
 });
+
+// 머리말/꼬리말 텍스트에 쓸 수 있는 자리표시자: {page} {total} {title} {date}
+const hfTextSchema = z.string().max(120).default('');
+
+const headerFooterSchema = z
+  .object({
+    headerLeft: hfTextSchema,
+    headerCenter: hfTextSchema,
+    headerRight: hfTextSchema,
+    footerLeft: hfTextSchema,
+    footerCenter: hfTextSchema,
+    footerRight: hfTextSchema,
+    fontSize: z.number().min(6).max(14).default(9), // pt
+    // 쪽번호 표기: 1 / - 1 - / 1 / N (footerCenter가 비어 있고 options.pageNumber=true일 때 적용)
+    pageNumberFormat: z.enum(['decimal', 'dash', 'fraction']).default('dash'),
+  })
+  .default({});
 
 export const templateSchema = z.object({
   name: z.string().min(1).max(60),
@@ -45,6 +63,7 @@ export const templateSchema = z.object({
       pageNumber: z.boolean().default(true),
     })
     .default({}),
+  hf: headerFooterSchema,
 });
 
 /** 파싱 성공 시 {ok:true, template}, 실패 시 {ok:false, issues} */

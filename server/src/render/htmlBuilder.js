@@ -123,7 +123,14 @@ function renderBlock(block, ctx) {
       if (cfg.numbering !== 'none') {
         ctx.counters[level] += 1;
         for (let l = level + 1; l <= 3; l++) ctx.counters[l] = 0; // 하위 레벨 리셋
-        prefix = `<span class="h-num">${formatNumber(cfg.numbering, ctx.counters[level])}</span> `;
+        if (cfg.numbering === 'nested') {
+          // 1. / 1.1. / 1.1.1. — 상위 레벨 카운터를 이어 붙임
+          const parts = [];
+          for (let l = 1; l <= level; l++) if (ctx.counters[l] > 0) parts.push(ctx.counters[l]);
+          prefix = `<span class="h-num">${parts.join('.')}.</span> `;
+        } else {
+          prefix = `<span class="h-num">${formatNumber(cfg.numbering, ctx.counters[level])}</span> `;
+        }
       }
       const children = block.children?.length ? renderBlocks(block.children, ctx) : '';
       return `<h${level}>${prefix}${renderSpans(block.spans)}</h${level}>${children}`;

@@ -60,10 +60,15 @@ export function deleteSession(sessionId) {
 // --- templates ---------------------------------------------------------------
 
 export function seedPresets() {
-  const count = db.prepare('SELECT COUNT(*) AS n FROM templates WHERE user_id IS NULL').get().n;
-  if (count > 0) return;
+  // 이름 기준 업서트 — 프리셋 정의가 바뀌면 부팅 시 최신으로 갱신된다
   const insert = db.prepare('INSERT INTO templates (user_id, name, style_json) VALUES (NULL, ?, ?)');
-  for (const preset of SYSTEM_PRESETS) insert.run(preset.name, JSON.stringify(preset));
+  const update = db.prepare(
+    `UPDATE templates SET style_json = ?, updated_at = datetime('now') WHERE user_id IS NULL AND name = ?`
+  );
+  for (const preset of SYSTEM_PRESETS) {
+    const json = JSON.stringify(preset);
+    if (update.run(json, preset.name).changes === 0) insert.run(preset.name, json);
+  }
 }
 
 export function listTemplates(userId) {
