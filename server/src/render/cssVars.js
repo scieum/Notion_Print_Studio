@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { FONTS_DIR } from '../config.js';
 
-const fontsConfig = JSON.parse(
-  fs.readFileSync(path.join(FONTS_DIR, 'fonts.config.json'), 'utf-8')
-);
+// require로 읽어야 Vercel 번들러(nft)가 JSON을 함수 번들에 포함시킨다
+const require = createRequire(import.meta.url);
+const fontsConfig = require('../../../fonts/fonts.config.json');
 
 export function enabledFonts() {
   return fontsConfig.fonts.filter((f) => f.enabled);

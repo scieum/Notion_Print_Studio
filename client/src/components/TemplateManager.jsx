@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Save, Trash2 } from 'lucide-react';
 import { postJson, del } from '../lib/api.js';
+import { saveLocalTemplate, removeLocalTemplate, isLocalTemplateId } from '../lib/templateStore.js';
 
 /** 양식 선택 + 커스텀 양식 저장/삭제 (프리셋에서 파생 저장, 설계서 §7.1) */
 export default function TemplateManager({ templates, current, onApply, onChanged }) {
@@ -23,7 +24,14 @@ export default function TemplateManager({ templates, current, onApply, onChanged
       await onChanged();
       setMessage(`"${name}" 저장됨`);
     } catch (err) {
-      setMessage(err.issues ? `저장 실패: ${err.issues[0]?.path} ${err.issues[0]?.message}` : `저장 실패: ${err.message}`);
+      if (err.issues) {
+        setMessage(`저장 실패: ${err.issues[0]?.path} ${err.issues[0]?.message}`);
+      } else {
+        // 서버 저장 미지원(서버리스 배포) → localStorage 폴백
+        saveLocalTemplate(name, current);
+        await onChanged();
+        setMessage(`"${name}" 브라우저에 저장됨`);
+      }
     } finally {
       setSaving(false);
     }
@@ -31,7 +39,8 @@ export default function TemplateManager({ templates, current, onApply, onChanged
 
   async function removeTemplate(id, name) {
     if (!confirm(`"${name}" 양식을 삭제할까요?`)) return;
-    await del(`/api/templates/${id}`);
+    if (isLocalTemplateId(id)) removeLocalTemplate(id);
+    else await del(`/api/templates/${id}`);
     await onChanged();
   }
 

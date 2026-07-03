@@ -5,6 +5,13 @@ import { useDebouncedEffect } from '../lib/useDebounce.js';
 import SettingsPanel from '../components/SettingsPanel.jsx';
 import TemplateManager from '../components/TemplateManager.jsx';
 import PreviewPager from '../components/PreviewPager.jsx';
+import { loadLocalTemplates } from '../lib/templateStore.js';
+
+/** 서버 양식 + 브라우저(localStorage) 양식 병합 — 서버리스 배포에서는 mine이 늘 로컬 */
+const mergeTemplates = (tpls) => ({
+  presets: tpls.presets,
+  mine: [...tpls.mine, ...loadLocalTemplates()],
+});
 
 export default function Editor({ page, onReconnect }) {
   const [templates, setTemplates] = useState({ presets: [], mine: [] });
@@ -27,7 +34,7 @@ export default function Editor({ page, onReconnect }) {
           postJson('/api/pages/fetch', { pageId: page.id }),
         ]);
         if (cancelled) return;
-        setTemplates(tpls);
+        setTemplates(mergeTemplates(tpls));
         setDocTitle(fetched.title);
         const saved = fetched.savedSettings?.override;
         setTemplate(saved || tpls.presets[0]?.style || null);
@@ -89,7 +96,7 @@ export default function Editor({ page, onReconnect }) {
   }
 
   async function reloadTemplates() {
-    setTemplates(await getJson('/api/templates'));
+    setTemplates(mergeTemplates(await getJson('/api/templates')));
   }
 
   return (

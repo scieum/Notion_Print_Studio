@@ -177,8 +177,10 @@ function renderBlock(block, ctx) {
 
     case 'image': {
       const caption = block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : '';
+      // data URI(서버리스 인라인)는 그대로, 캐시 경로(/img/:id)는 서버 주소를 붙인다
+      const src = block.src.startsWith('data:') ? block.src : ctx.baseUrl + block.src;
       // break-inside: avoid — 페이지 경계에서 잘리지 않게 (CLAUDE.md 블록 처리 원칙)
-      return `<figure class="nb-image"><img src="${esc(ctx.baseUrl + block.src)}" alt=""/>${caption}</figure>`;
+      return `<figure class="nb-image"><img src="${esc(src)}" alt=""/>${caption}</figure>`;
     }
 
     case 'equation':

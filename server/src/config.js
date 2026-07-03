@@ -28,6 +28,9 @@ export const config = {
   blockCacheTtlMs: 10 * 60 * 1000, // 정규화 블록 캐시 TTL 10분
 };
 
+// Vercel 등 읽기 전용 파일시스템에서는 생성 실패를 무시 (DB/이미지 캐시는 Express 전용)
 for (const dir of [DATA_DIR, IMAGE_DIR]) {
-  fs.mkdirSync(dir, { recursive: true });
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch {}
 }
