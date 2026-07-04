@@ -5,8 +5,7 @@
   "installCommand": "PUPPETEER_SKIP_DOWNLOAD=1 npm install --no-audit --no-fund",
   "functions": {
     "api/**/*.js": {
-      "maxDuration": 60,
-      "memory": 1769
+      "maxDuration": 60
     }
   },
   "rewrites": [
