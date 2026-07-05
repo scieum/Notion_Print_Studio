@@ -13,20 +13,42 @@ export function enabledFonts() {
 
 export function fontStack(fontId) {
   const font = fontsConfig.fonts.find((f) => f.id === fontId && f.enabled);
-  return font ? font.fallback : "'Malgun Gothic', 'Noto Sans KR', sans-serif";
+  // 서버리스 Chromium엔 시스템 한글 폰트가 없다 — 항상 임베드되는 Noto Sans KR을 우선.
+  return font ? font.fallback : "'Noto Sans KR', 'Malgun Gothic', sans-serif";
 }
 
-/** 실제 woff2 파일이 존재하는 폰트만 @font-face 생성 (없으면 fallback 스택으로 렌더) */
-export function buildFontFaces() {
+const familyOf = (f) => f.fallback.match(/'([^']+)'/)?.[1] || f.name;
+
+/**
+ * 실제 woff2 파일이 존재하는 폰트만 @font-face 생성 (없으면 fallback 스택으로 렌더).
+ * template을 주면 사용 중인 폰트 + 그 fallback 스택에 등장하는 폰트만 임베드해
+ * base64 인라인으로 커지는 HTML을 최소화한다 (기본 fallback인 Noto Sans KR은 항상 포함).
+ */
+export function buildFontFaces(template) {
+  const fonts = enabledFonts();
+  let selected = fonts;
+
+  if (template) {
+    const usedIds = new Set(['noto-sans-kr', template.body?.font]);
+    for (const level of ['h1', 'h2', 'h3']) usedIds.add(template.headings?.[level]?.font);
+    const picked = new Set();
+    for (const f of fonts) {
+      if (!usedIds.has(f.id)) continue;
+      picked.add(f);
+      // 파일이 없는 폰트(KoPub 등)는 fallback 스택의 임베드 가능한 폰트로 렌더된다
+      for (const g of fonts) if (f.fallback.includes(`'${familyOf(g)}'`)) picked.add(g);
+    }
+    selected = [...picked];
+  }
+
   const faces = [];
-  for (const font of enabledFonts()) {
+  for (const font of selected) {
     for (const [weight, file] of Object.entries(font.files || {})) {
       const abs = path.join(FONTS_DIR, file);
       if (!fs.existsSync(abs)) continue;
       const data = fs.readFileSync(abs).toString('base64');
-      const family = font.fallback.match(/'([^']+)'/)?.[1] || font.name;
       faces.push(
-        `@font-face { font-family: '${family}'; font-weight: ${weight};` +
+        `@font-face { font-family: '${familyOf(font)}'; font-weight: ${weight};` +
           ` src: url(data:font/woff2;base64,${data}) format('woff2'); font-display: block; }`
       );
     }
