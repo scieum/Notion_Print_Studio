@@ -94,13 +94,21 @@ export async function deleteSession(sessionId) {
 // --- templates ---------------------------------------------------------------
 
 export async function seedPresets() {
-  const row = await first('SELECT COUNT(*) AS n FROM templates WHERE user_id IS NULL');
-  if (row && Number(row.n) > 0) return;
+  // 이름 기준 upsert — 프리셋 정의(폰트 등)가 바뀌면 배포 시 최신으로 갱신된다.
+  // (COUNT 체크 방식은 한 번 시드된 뒤 프리셋 변경이 영영 반영되지 않는 문제가 있었다.)
   for (const preset of SYSTEM_PRESETS) {
-    await run('INSERT INTO templates (user_id, name, style_json) VALUES (NULL, ?, ?)', [
-      preset.name,
-      JSON.stringify(preset),
-    ]);
+    const json = JSON.stringify(preset);
+    const res = await run(
+      `UPDATE templates SET style_json = ?, updated_at = datetime('now')
+       WHERE user_id IS NULL AND name = ?`,
+      [json, preset.name]
+    );
+    if (!res.rowsAffected) {
+      await run('INSERT INTO templates (user_id, name, style_json) VALUES (NULL, ?, ?)', [
+        preset.name,
+        json,
+      ]);
+    }
   }
 }
 

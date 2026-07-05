@@ -11,6 +11,17 @@ export function enabledFonts() {
   return fontsConfig.fonts.filter((f) => f.enabled);
 }
 
+/**
+ * 실제 woff2 파일이 존재하는 폰트만 (FontPicker 노출용). 파일 없는 폰트를 목록에 두면
+ * 골라도 fallback으로만 렌더돼 "적용 안 됨"처럼 보이므로 여기서 걸러낸다.
+ */
+export function availableFonts() {
+  return enabledFonts().filter((f) => {
+    const files = Object.values(f.files || {});
+    return files.length > 0 && files.every((fn) => fs.existsSync(path.join(FONTS_DIR, fn)));
+  });
+}
+
 // 이모지 fallback — 스택 맨 끝에 붙여 폰트에 없는 이모지가 두부(□)로 안 나오게 한다.
 const EMOJI_FALLBACK = "'Noto Emoji'";
 

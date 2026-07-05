@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getImageFile } from '../cache/imageCache.js';
-import { enabledFonts } from '../render/cssVars.js';
+import { availableFonts } from '../render/cssVars.js';
 
 const router = Router();
 
@@ -20,7 +20,7 @@ router.get('/img/:cacheId', async (req, res, next) => {
 /** 활성 폰트 목록 (FontPicker용) — 라이선스 플래그 OFF 폰트는 여기 안 나온다 (C6) */
 router.get('/api/fonts', (req, res) => {
   res.json({
-    fonts: enabledFonts().map((f) => ({ id: f.id, name: f.name, category: f.category })),
+    fonts: availableFonts().map((f) => ({ id: f.id, name: f.name, category: f.category })),
   });
 });
 

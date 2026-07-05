@@ -8,9 +8,9 @@ export const PRESET_GONGMUN = {
     margin: { top: 20, bottom: 15, left: 20, right: 20 },
     background: '#ffffff',
   },
-  body: { font: 'kopub-batang', size: 11, lineHeight: 1.6, letterSpacing: 0, align: 'justify' },
+  body: { font: 'noto-serif-kr', size: 11, lineHeight: 1.6, letterSpacing: 0, align: 'justify' },
   headings: {
-    h1: { font: 'kopub-dotum', size: 18, weight: 700, spaceBefore: 12, spaceAfter: 6, numbering: 'roman' },
+    h1: { font: 'noto-sans-kr', size: 18, weight: 700, spaceBefore: 12, spaceAfter: 6, numbering: 'roman' },
     h2: { size: 14, weight: 700, spaceBefore: 8, spaceAfter: 4, numbering: 'decimal' },
     h3: { size: 12, weight: 600, spaceBefore: 6, spaceAfter: 3, numbering: 'hangul' },
   },
@@ -46,7 +46,7 @@ export const PRESET_WORKSHEET = {
     margin: { top: 15, bottom: 15, left: 15, right: 15 },
     background: '#ffffff',
   },
-  body: { font: 'kopub-dotum', size: 11, lineHeight: 1.8, letterSpacing: 0.02, align: 'left' },
+  body: { font: 'noto-sans-kr', size: 11, lineHeight: 1.8, letterSpacing: 0.02, align: 'left' },
   headings: {
     h1: { size: 22, weight: 700, spaceBefore: 8, spaceAfter: 10, numbering: 'none' },
     h2: { size: 16, weight: 700, spaceBefore: 10, spaceAfter: 6, numbering: 'decimal' },
