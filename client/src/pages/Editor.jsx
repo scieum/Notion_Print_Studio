@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { getJson, postJson, postBlob } from '../lib/api.js';
 import { useDebouncedEffect } from '../lib/useDebounce.js';
 import SettingsPanel from '../components/SettingsPanel.jsx';
@@ -21,6 +21,7 @@ export default function Editor({ page, onReconnect }) {
   const [rendering, setRendering] = useState(false);
   const [renderError, setRenderError] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [fallbackNotice, setFallbackNotice] = useState(false);
 
   // 초기 로드: 양식 목록 + 페이지 fetch(정규화 캐시 워밍) + 저장된 문서 설정 복원
@@ -91,6 +92,40 @@ export default function Editor({ page, onReconnect }) {
     }
   }
 
+  // 고품질 PDF를 받아 숨은 iframe으로 브라우저 인쇄 대화상자를 띄운다 (바로 인쇄)
+  async function printPdf() {
+    if (!template) return;
+    setPrinting(true);
+    setRenderError(null);
+    try {
+      const { blob } = await postBlob('/api/render/pdf', { pageId: page.id, template });
+      const url = URL.createObjectURL(blob);
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+      iframe.src = url;
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        } catch {
+          // 인쇄 대화상자를 못 열면 새 탭으로 폴백
+          window.open(url, '_blank');
+        }
+        // 인쇄 대화상자가 뜬 뒤 정리 (즉시 revoke하면 인쇄가 취소될 수 있어 지연)
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          iframe.remove();
+        }, 60000);
+      };
+      document.body.appendChild(iframe);
+    } catch (err) {
+      if (err.reconnect) return onReconnect();
+      setRenderError(err.message);
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   async function reloadTemplates() {
     setTemplates(mergeTemplates(await getJson('/api/templates')));
   }
@@ -107,6 +142,10 @@ export default function Editor({ page, onReconnect }) {
             </span>
           )}
           <div className="flex-1" />
+          <button className="btn-secondary !py-1.5 text-xs" onClick={printPdf} disabled={printing || !template}>
+            <Printer size={14} aria-hidden />
+            {printing ? '준비 중…' : '인쇄'}
+          </button>
           <button className="btn-primary !py-1.5 text-xs" onClick={downloadPdf} disabled={downloading || !template}>
             <Download size={14} aria-hidden />
             {downloading ? '생성 중…' : 'PDF 다운로드'}

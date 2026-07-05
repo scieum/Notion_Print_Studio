@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
-import { pdfPageOptions } from './cssVars.js';
+import { pdfPageOptions, buildHeaderFooter } from './cssVars.js';
 import { getImageFile } from '../cache/imageCache.js';
 
 /**
@@ -54,27 +54,24 @@ async function interceptCachedImages(page) {
 /**
  * HTML → PDF 버퍼. preview=true면 저해상도(스케일 축소)로 빠르게.
  */
-export async function renderPdf({ html, template, preview = false }) {
+export async function renderPdf({ html, template, title = '', preview = false }) {
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
     await interceptCachedImages(page);
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
     const pageOpts = pdfPageOptions(template);
-    const showPageNumber = !!template.options?.pageNumber;
+    // 커스텀 머리말/꼬리말 + 쪽번호를 buildHeaderFooter가 조립 (설계서 O6)
+    const hf = buildHeaderFooter(template, title);
     // puppeteer 22+는 Uint8Array를 반환 — 매직바이트 검사·res.send가 기대하는 Buffer로 변환
     const pdf = await page.pdf({
       ...pageOpts,
       printBackground: true,
       preferCSSPageSize: false,
       scale: preview ? 0.9 : 1,
-      displayHeaderFooter: showPageNumber,
-      headerTemplate: '<span></span>',
-      footerTemplate: showPageNumber
-        ? `<div style="width:100%; text-align:center; font-size:8pt; color:#444;">
-             <span class="pageNumber"></span> / <span class="totalPages"></span>
-           </div>`
-        : '<span></span>',
+      displayHeaderFooter: hf.displayHeaderFooter,
+      headerTemplate: hf.headerTemplate,
+      footerTemplate: hf.footerTemplate,
     });
     return Buffer.from(pdf);
   } finally {

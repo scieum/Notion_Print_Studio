@@ -35,7 +35,7 @@ async function handleRender(req, res, next, kind) {
       title, blocks, template,
       baseUrl: RENDER_BASE_URL, // Puppeteer 요청 가로채기가 이미지(/img/:id)를 DB에서 응답
     });
-    const pdf = await renderPdf({ html, template, preview: kind === 'preview' });
+    const pdf = await renderPdf({ html, template, title, preview: kind === 'preview' });
 
     // PDF 헤더 매직바이트 검증 (설계서 §11 단계 8)
     if (pdf.length < 5 || pdf.subarray(0, 5).toString('latin1') !== '%PDF-') {
