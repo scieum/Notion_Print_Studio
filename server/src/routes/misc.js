@@ -34,12 +34,26 @@ router.get('/api/_diag2', async (req, res) => {
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
     const q = async (sql) => (await db.execute(sql)).rows;
-    res.json({
+    const out = {
       commit: (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7),
       users: await q('SELECT id, created_at FROM users'),
       sessions: await q('SELECT substr(id,1,6) AS id6, user_id, created_at FROM sessions ORDER BY created_at DESC LIMIT 5'),
       renderJobs: await q("SELECT id, kind, status, started_at, substr(COALESCE(error,''),1,300) AS err FROM render_jobs ORDER BY id DESC LIMIT 5"),
-    });
+    };
+    // 쿠키 파싱·세션 JOIN·dao 경유 조회를 각각 격리 검증
+    out.cookieHeader = (req.headers.cookie || '').slice(0, 40);
+    out.parsedSid6 = (req.cookies?.sid || '').slice(0, 6);
+    if (req.query.sid) {
+      const sid = String(req.query.sid);
+      out.joinRows = (await db.execute({
+        sql: 'SELECT u.id, u.name FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?',
+        args: [sid],
+      })).rows;
+      const dao = await import('../db/dao.js');
+      const viaDao = await dao.getSessionUser(sid);
+      out.viaDao = viaDao ? { id: viaDao.id } : null;
+    }
+    res.json(out);
   } catch (err) {
     res.status(500).json({ error: String((err && err.message) || err).slice(0, 300) });
   }
