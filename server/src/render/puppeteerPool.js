@@ -1,7 +1,9 @@
+import path from 'node:path';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import { pdfPageOptions, buildHeaderFooter } from './cssVars.js';
 import { getImageFile } from '../cache/imageCache.js';
+import { FONTS_DIR } from '../config.js';
 
 /**
  * 서버리스(Vercel) PDF 렌더: puppeteer-core + @sparticuz/chromium.
@@ -24,6 +26,13 @@ async function launchBrowser() {
       executablePath: localExec,
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none'],
     });
+  }
+  // 한글 폰트를 Chromium 시스템(fontconfig)에 등록 — 머리말/꼬리말 템플릿은 본문 문서와
+  // 분리돼 @font-face를 못 쓰므로, 시스템 폰트로 등록해야 한글 머리말/꼬리말이 렌더된다.
+  try {
+    await chromium.font(path.join(FONTS_DIR, 'NotoSansKR-Regular.otf'));
+  } catch {
+    /* 폰트 등록 실패해도 본문(@font-face)은 정상 — 머리말/꼬리말 한글만 영향 */
   }
   // 서버리스: @sparticuz/chromium 번들 바이너리 (headless shell — chromium.headless 권장값 사용).
   return puppeteer.launch({

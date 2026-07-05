@@ -148,7 +148,9 @@ function renderBlock(block, ctx) {
       const bg = NOTION_BG_COLORS[block.color] || '#F1F1EF';
       const icon = block.icon ? `<span class="callout-icon">${esc(block.icon)}</span>` : '';
       const children = block.children?.length ? renderBlocks(block.children, ctx) : '';
-      return `<div class="callout" style="background:${bg}">${icon}<div class="callout-body">${renderSpans(block.spans)}${children}</div></div>`;
+      // calloutKeepTogether=true면 페이지 경계에서 자르지 않고 통째로 유지
+      const keep = ctx.template.options?.calloutKeepTogether ? ' keep-together' : '';
+      return `<div class="callout${keep}" style="background:${bg}">${icon}<div class="callout-body">${renderSpans(block.spans)}${children}</div></div>`;
     }
 
     case 'toggle': {
@@ -264,6 +266,7 @@ li { margin: 0.15em 0; }
 blockquote { border-left: 3px solid #333; padding-left: 0.9em; margin: 0.6em 0; }
 hr { border: none; border-top: 1px solid rgba(0,0,0,0.25); margin: 1em 0; }
 .callout { display: flex; gap: 0.6em; padding: 0.8em 1em; border-radius: 4px; margin: 0.6em 0; }
+.callout.keep-together { break-inside: avoid; }
 .callout-icon { flex: none; }
 .callout-body { flex: 1; min-width: 0; }
 .toggle { margin: 0.4em 0; }

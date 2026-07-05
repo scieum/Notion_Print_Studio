@@ -61,6 +61,9 @@ export const templateSchema = z.object({
       toggleExpand: z.boolean().default(true),
       columnStack: z.boolean().default(true),
       pageNumber: z.boolean().default(true),
+      // true면 콜아웃을 페이지 경계에서 자르지 않고 통째로 유지(공간 낭비 가능),
+      // false(기본)면 이어붙여 페이지 낭비를 막는다.
+      calloutKeepTogether: z.boolean().default(false),
     })
     .default({}),
   hf: headerFooterSchema,

@@ -172,6 +172,11 @@ export default function SettingsPanel({ template, onChange }) {
           onChange={(v) => set('options.columnStack', v)} />
         <Check label="쪽번호 표시" checked={template.options.pageNumber}
           onChange={(v) => set('options.pageNumber', v)} />
+        <Check label="콜아웃을 페이지 넘겨도 통째로 유지" checked={template.options.calloutKeepTogether ?? false}
+          onChange={(v) => set('options.calloutKeepTogether', v)} />
+        <p className="text-[11px] text-placeholder leading-relaxed -mt-1 ml-6">
+          끄면 콜아웃이 페이지 경계에서 이어져 공간 낭비를 줄입니다(기본).
+        </p>
       </Section>
     </div>
   );
