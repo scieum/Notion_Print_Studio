@@ -126,10 +126,13 @@ export function buildHeaderFooter(template, title = '') {
   }
 
   const fontSize = hf.fontSize || 9;
+  // Chromium 머리말/꼬리말 템플릿은 본문과 별개 문서라 본문 @font-face를 상속받지 못한다.
+  // → 한글 폰트(Noto Sans KR)를 각 템플릿에 직접 인라인해야 한글 머리말/꼬리말이 렌더된다.
+  const hfFontFace = headerFooterFontFace();
   // Chromium 머리말/꼬리말은 스타일 상속이 없어 전부 인라인으로 지정해야 한다
   const bar = (left, center, right) =>
-    `<div style="width:100%; font-size:${fontSize}pt; color:#444; padding:0 10mm;
-        display:flex; align-items:center; font-family:'Malgun Gothic',sans-serif;">
+    `${hfFontFace}<div style="width:100%; font-size:${fontSize}pt; color:#444; padding:0 10mm;
+        display:flex; align-items:center; font-family:'Noto Sans KR','Malgun Gothic',sans-serif;">
        <span style="flex:1; text-align:left;">${sub(left)}</span>
        <span style="flex:1; text-align:center;">${sub(center)}</span>
        <span style="flex:1; text-align:right;">${sub(right)}</span>
@@ -143,6 +146,22 @@ export function buildHeaderFooter(template, title = '') {
     headerTemplate: hasHeader ? bar(fields.headerLeft, fields.headerCenter, fields.headerRight) : '<span></span>',
     footerTemplate: hasFooter ? bar(fields.footerLeft, fields.footerCenter, fields.footerRight) : '<span></span>',
   };
+}
+
+// 머리말/꼬리말 템플릿에 인라인할 한글 @font-face (모듈 로드 후 1회만 base64 인코딩)
+let _hfFontFace = null;
+function headerFooterFontFace() {
+  if (_hfFontFace !== null) return _hfFontFace;
+  try {
+    const abs = path.join(FONTS_DIR, 'NotoSansKR-Regular.woff2');
+    const data = fs.readFileSync(abs).toString('base64');
+    _hfFontFace =
+      `<style>@font-face { font-family: 'Noto Sans KR'; font-weight: 400;` +
+      ` src: url(data:font/woff2;base64,${data}) format('woff2'); }</style>`;
+  } catch {
+    _hfFontFace = '';
+  }
+  return _hfFontFace;
 }
 
 /** 용지 크기 → Puppeteer page.pdf() 옵션 (여백은 mm로 전달) */
