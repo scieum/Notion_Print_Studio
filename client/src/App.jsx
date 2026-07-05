@@ -28,8 +28,15 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col">
       <header className="flex-none flex items-center gap-3 px-4 h-12 border-b" style={{ borderColor: 'var(--border)' }}>
-        <Printer size={18} className="text-accent" aria-hidden />
-        <span className="text-sm font-semibold">Notion Print Studio</span>
+        {/* 로고 클릭 → 홈(페이지 선택)으로 */}
+        <button
+          className="flex items-center gap-3 rounded px-1 -mx-1 hover:bg-surface transition-colors"
+          onClick={() => setPage(null)}
+          aria-label="홈으로"
+        >
+          <Printer size={18} className="text-accent" aria-hidden />
+          <span className="text-sm font-semibold">Notion Print Studio</span>
+        </button>
         {me?.workspace?.name && (
           <span className="text-xs text-muted">{me.workspace.name}</span>
         )}
