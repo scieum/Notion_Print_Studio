@@ -2,15 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
-  "installCommand": "PUPPETEER_SKIP_DOWNLOAD=1 npm install --no-audit --no-fund",
+  "installCommand": "npm install --no-audit --no-fund",
   "functions": {
-    "api/**/*.js": {
-      "maxDuration": 60
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "{server/src/db/schema.sql,fonts/**}"
     }
   },
   "rewrites": [
-    { "source": "/auth/notion", "destination": "/api/auth/notion" },
-    { "source": "/auth/notion/callback", "destination": "/api/auth/callback" },
-    { "source": "/auth/logout", "destination": "/api/auth/logout" }
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/auth/(.*)", "destination": "/api" },
+    { "source": "/img/(.*)", "destination": "/api" }
   ]
 }

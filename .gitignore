@@ -7,3 +7,9 @@ data/
 
 .vercel
 .env*
+
+# Vite 설정 로드 시 생성되는 임시 파일
+vite.config.js.timestamp-*.mjs
+
+# OneDrive 동기화 충돌 사본
+*-DESKTOP-TBVSDIF*

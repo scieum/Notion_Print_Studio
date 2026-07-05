@@ -3,8 +3,7 @@ import { requireAuth } from './middleware.js';
 import { validateTemplate, DEFAULT_TEMPLATE } from '@nps/shared';
 import { getNormalizedPage } from './pages.js';
 import { buildHtml } from '../render/htmlBuilder.js';
-import { renderPdf } from '../render/puppeteerPool.js';
-import { config } from '../config.js';
+import { renderPdf, RENDER_BASE_URL } from '../render/puppeteerPool.js';
 import {
   startRenderJob, finishRenderJob, appendRenderJobError, saveDocSettings,
 } from '../db/dao.js';
@@ -26,7 +25,7 @@ async function handleRender(req, res, next, kind) {
   if (!pageId) return res.status(400).json({ error: 'pageId required' });
 
   const template = resolveTemplate(templateInput, res);
-  const jobId = startRenderJob(req.user.id, pageId, kind);
+  const jobId = await startRenderJob(req.user.id, pageId, kind);
   try {
     const { title, blocks } = await getNormalizedPage(
       req.user, req.notionToken, pageId,
@@ -34,17 +33,17 @@ async function handleRender(req, res, next, kind) {
     );
     const html = buildHtml({
       title, blocks, template,
-      baseUrl: `http://localhost:${config.port}`, // Puppeteer가 캐시 이미지에 접근하는 내부 URL
+      baseUrl: RENDER_BASE_URL, // Puppeteer 요청 가로채기가 이미지(/img/:id)를 DB에서 응답
     });
-    const pdf = await renderPdf({ html, template, preview: kind === 'preview', title });
+    const pdf = await renderPdf({ html, template, preview: kind === 'preview' });
 
     // PDF 헤더 매직바이트 검증 (설계서 §11 단계 8)
     if (pdf.length < 5 || pdf.subarray(0, 5).toString('latin1') !== '%PDF-') {
       throw new Error('invalid PDF output');
     }
 
-    saveDocSettings(req.user.id, pageId, null, template); // 문서별 마지막 인쇄 설정 저장
-    finishRenderJob(jobId, 'done');
+    await saveDocSettings(req.user.id, pageId, null, template); // 문서별 마지막 인쇄 설정 저장
+    await finishRenderJob(jobId, 'done');
 
     res.set('Content-Type', 'application/pdf');
     if (kind === 'pdf') {
@@ -53,7 +52,7 @@ async function handleRender(req, res, next, kind) {
     }
     res.send(Buffer.from(pdf));
   } catch (err) {
-    finishRenderJob(jobId, 'error', err.message);
+    await finishRenderJob(jobId, 'error', err.message);
     next(err);
   }
 }
