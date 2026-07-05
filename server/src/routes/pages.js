@@ -5,8 +5,7 @@ import { fetchBlockTree } from '../notion/blockFetcher.js';
 import { normalizeBlocks } from '../normalize/normalizer.js';
 import { getCachedPage, setCachedPage } from '../cache/blockCache.js';
 import { cacheImage } from '../cache/imageCache.js';
-import { getDocSettings } from '../db/dao.js';
-import { validateTemplate } from '@nps/shared';
+import { getDocSettings, upsertPageHistory } from '../db/dao.js';
 
 const router = Router();
 
@@ -42,7 +41,11 @@ export async function getNormalizedPage(user, token, pageId, logError = () => {}
     cacheImage: (blockId, url) => cacheImage(blockId, url),
     logError,
   });
-  const entry = { title: extractPageTitle(page), blocks };
+  const entry = {
+    title: extractPageTitle(page),
+    icon: page.icon?.type === 'emoji' ? page.icon.emoji : null,
+    blocks,
+  };
   setCachedPage(user.id, pageId, entry);
   return entry;
 }
@@ -51,13 +54,9 @@ router.post('/api/pages/fetch', requireAuth, async (req, res, next) => {
   try {
     const { pageId } = req.body || {};
     if (!pageId) return res.status(400).json({ error: 'pageId required' });
-    const { title, blocks } = await getNormalizedPage(req.user, req.notionToken, pageId);
-    const saved = getDocSettings(req.user.id, pageId);
-    // 저장 당시 스키마가 달라도 기본값이 채워진 형태로 복원
-    if (saved?.override) {
-      const v = validateTemplate(saved.override);
-      saved.override = v.ok ? v.template : null;
-    }
+    const { title, icon, blocks } = await getNormalizedPage(req.user, req.notionToken, pageId);
+    const saved = await getDocSettings(req.user.id, pageId);
+    await upsertPageHistory(req.user.id, pageId, { title, icon }); // 작업 기록 (best-effort)
     res.json({
       title,
       blockCount: blocks.length,

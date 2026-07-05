@@ -34,10 +34,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 밑줄 스타일 인풋 (DESIGN.md — bottom border만) */
-.input-underline {
-  @apply w-full bg-transparent border-0 border-b-2 rounded-none px-0 py-1.5 text-sm outline-none transition-colors;
-  border-bottom-color: var(--border);
+/* 밑줄 스타일 인풋 (DESIGN.md — bottom border만).
+   @layer components 안에 둬야 pl-8 같은 유틸리티 클래스가 px-0을 덮어쓸 수 있다. */
+@layer components {
+  .input-underline {
+    @apply w-full bg-transparent border-0 border-b-2 rounded-none px-0 py-1.5 text-sm outline-none transition-colors;
+    border-bottom-color: var(--border);
+  }
 }
 .input-underline:focus {
   border-bottom-color: var(--accent);

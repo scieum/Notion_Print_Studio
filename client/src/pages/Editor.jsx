@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { getJson, postJson, postBlob } from '../lib/api.js';
 import { useDebouncedEffect } from '../lib/useDebounce.js';
@@ -17,12 +17,11 @@ export default function Editor({ page, onReconnect }) {
   const [templates, setTemplates] = useState({ presets: [], mine: [] });
   const [template, setTemplate] = useState(null); // 현재 편집 중인 스타일 JSON
   const [docTitle, setDocTitle] = useState(page.title);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewBlob, setPreviewBlob] = useState(null);
   const [rendering, setRendering] = useState(false);
   const [renderError, setRenderError] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [fallbackNotice, setFallbackNotice] = useState(false);
-  const previewUrlRef = useRef(null);
 
   // 초기 로드: 양식 목록 + 페이지 fetch(정규화 캐시 워밍) + 저장된 문서 설정 복원
   useEffect(() => {
@@ -58,10 +57,7 @@ export default function Editor({ page, onReconnect }) {
         template,
       });
       setFallbackNotice(templateFallback);
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-      const url = URL.createObjectURL(blob);
-      previewUrlRef.current = url;
-      setPreviewUrl(url);
+      setPreviewBlob(blob);
     } catch (err) {
       if (err.reconnect) return onReconnect();
       setRenderError(err.message);
@@ -116,7 +112,16 @@ export default function Editor({ page, onReconnect }) {
             {downloading ? '생성 중…' : 'PDF 다운로드'}
           </button>
         </div>
-        <PreviewPager url={previewUrl} rendering={rendering} error={renderError} onRetry={renderPreview} />
+        <PreviewPager
+          blob={previewBlob}
+          rendering={rendering}
+          error={renderError}
+          onRetry={renderPreview}
+          // 미리보기 1페이지 썸네일 → 작업 기록 갱신 (실패해도 무시)
+          onThumbnail={(thumb) =>
+            postJson('/api/history/thumbnail', { pageId: page.id, thumbnail: thumb }).catch(() => {})
+          }
+        />
       </section>
 
       {/* 설정 패널 */}
