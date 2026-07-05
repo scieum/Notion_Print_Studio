@@ -2,10 +2,23 @@ import { Router } from 'express';
 import crypto from 'node:crypto';
 import { buildAuthUrl, exchangeCode } from '../notion/oauth.js';
 import { upsertUser, saveToken, createSession, deleteSession, getSessionUser, getToken } from '../db/dao.js';
+import { config } from '../config.js';
 
 const router = Router();
 
 router.get('/auth/notion', (req, res) => {
+  // 쿠키는 도메인별 저장이고 콜백은 항상 NOTION_REDIRECT_URI의 도메인으로 돌아온다.
+  // 다른 도메인(Vercel 배포별 URL, 프로젝트 별칭 등)에서 시작하면 state·세션 쿠키가
+  // 콜백 도메인에 없어 로그인이 조용히 튕긴다 → 먼저 canonical 도메인으로 이동시킨다.
+  try {
+    const canonical = new URL(config.notion.redirectUri);
+    const reqHost = req.headers['x-forwarded-host'] || req.headers.host;
+    if (reqHost && reqHost !== canonical.host && !String(reqHost).startsWith('localhost')) {
+      return res.redirect(`${canonical.origin}/auth/notion`);
+    }
+  } catch {
+    /* redirectUri 파싱 실패 시 기존 흐름 유지 */
+  }
   const state = crypto.randomBytes(16).toString('hex');
   res.cookie('oauth_state', state, { httpOnly: true, sameSite: 'lax', maxAge: 10 * 60 * 1000 });
   res.redirect(buildAuthUrl(state));

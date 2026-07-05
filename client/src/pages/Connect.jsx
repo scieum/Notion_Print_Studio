@@ -1,7 +1,13 @@
 import { Link2, ShieldCheck, FileText } from 'lucide-react';
 
 export default function Connect() {
-  const connectError = new URLSearchParams(location.search).has('connect_error');
+  const connectError = new URLSearchParams(location.search).get('connect_error');
+  const errorMessage =
+    connectError === 'state'
+      ? '연결 확인 정보가 만료되었거나 다른 주소에서 시작되었습니다. 이 화면에서 다시 시도해 주세요.'
+      : connectError
+        ? '연결에 실패했습니다. 다시 시도해 주세요.'
+        : null;
 
   return (
     <div className="h-full flex items-center justify-center bg-surface">
@@ -13,11 +19,7 @@ export default function Connect() {
           워드프로세서 수준의 인쇄 제어로 고품질 PDF를 만듭니다.
         </p>
 
-        {connectError && (
-          <p className="text-sm mb-4 text-muted">
-            연결에 실패했습니다. 다시 시도해 주세요.
-          </p>
-        )}
+        {errorMessage && <p className="text-sm mb-4 text-muted">{errorMessage}</p>}
 
         <a href="/auth/notion" className="btn-primary justify-center w-full">
           <Link2 size={16} aria-hidden />
