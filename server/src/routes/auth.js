@@ -70,7 +70,14 @@ router.post('/auth/logout', async (req, res, next) => {
 router.get('/api/me', async (req, res, next) => {
   try {
     const user = await getSessionUser(req.cookies?.sid);
-    if (!user) return res.status(401).json({ error: 'unauthorized', reconnect: true });
+    // TODO: 진단 후 제거 — 401 원인 추적용 임시 디버그 필드
+    if (!user) {
+      return res.status(401).json({
+        error: 'unauthorized',
+        reconnect: true,
+        d: { sid6: (req.cookies?.sid || '').slice(0, 6), hasCookieHeader: !!req.headers.cookie },
+      });
+    }
     const token = await getToken(user.id);
     res.json({
       user: { name: user.name, avatarUrl: user.avatar_url },
