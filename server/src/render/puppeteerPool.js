@@ -62,7 +62,8 @@ export async function renderPdf({ html, template, preview = false }) {
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
     const pageOpts = pdfPageOptions(template);
     const showPageNumber = !!template.options?.pageNumber;
-    return await page.pdf({
+    // puppeteer 22+는 Uint8Array를 반환 — 매직바이트 검사·res.send가 기대하는 Buffer로 변환
+    const pdf = await page.pdf({
       ...pageOpts,
       printBackground: true,
       preferCSSPageSize: false,
@@ -75,6 +76,7 @@ export async function renderPdf({ html, template, preview = false }) {
            </div>`
         : '<span></span>',
     });
+    return Buffer.from(pdf);
   } finally {
     await browser.close().catch(() => {});
   }
