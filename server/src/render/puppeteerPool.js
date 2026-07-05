@@ -25,11 +25,11 @@ async function launchBrowser() {
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none'],
     });
   }
-  // 서버리스: @sparticuz/chromium 번들 바이너리.
+  // 서버리스: @sparticuz/chromium 번들 바이너리 (headless shell — chromium.headless 권장값 사용).
   return puppeteer.launch({
     args: [...chromium.args, '--font-render-hinting=none'],
     executablePath: await chromium.executablePath(),
-    headless: true,
+    headless: chromium.headless,
   });
 }
 

@@ -10,12 +10,12 @@
   "dependencies": {
     "@libsql/client": "^0.14.0",
     "@nps/shared": "*",
-    "@sparticuz/chromium": "^131.0.0",
+    "@sparticuz/chromium": "^149.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "katex": "^0.16.11",
-    "puppeteer-core": "^23.9.0",
+    "puppeteer-core": "^25.3.0",
     "zod": "^3.23.8"
   }
 }
