@@ -263,7 +263,7 @@ li { margin: 0.15em 0; }
 .todo-box.checked { background: #333; color: #fff; border-color: #333; }
 blockquote { border-left: 3px solid #333; padding-left: 0.9em; margin: 0.6em 0; }
 hr { border: none; border-top: 1px solid rgba(0,0,0,0.25); margin: 1em 0; }
-.callout { display: flex; gap: 0.6em; padding: 0.8em 1em; border-radius: 4px; margin: 0.6em 0; break-inside: avoid; }
+.callout { display: flex; gap: 0.6em; padding: 0.8em 1em; border-radius: 4px; margin: 0.6em 0; }
 .callout-icon { flex: none; }
 .callout-body { flex: 1; min-width: 0; }
 .toggle { margin: 0.4em 0; }

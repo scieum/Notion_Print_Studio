@@ -11,10 +11,14 @@ export function enabledFonts() {
   return fontsConfig.fonts.filter((f) => f.enabled);
 }
 
+// 이모지 fallback — 스택 맨 끝에 붙여 폰트에 없는 이모지가 두부(□)로 안 나오게 한다.
+const EMOJI_FALLBACK = "'Noto Emoji'";
+
 export function fontStack(fontId) {
   const font = fontsConfig.fonts.find((f) => f.id === fontId && f.enabled);
   // 서버리스 Chromium엔 시스템 한글 폰트가 없다 — 항상 임베드되는 Noto Sans KR을 우선.
-  return font ? font.fallback : "'Noto Sans KR', 'Malgun Gothic', sans-serif";
+  const stack = font ? font.fallback : "'Noto Sans KR', 'Malgun Gothic', sans-serif";
+  return `${stack}, ${EMOJI_FALLBACK}`;
 }
 
 const familyOf = (f) => f.fallback.match(/'([^']+)'/)?.[1] || f.name;
@@ -42,6 +46,15 @@ export function buildFontFaces(template) {
   }
 
   const faces = [];
+  // 이모지 폰트는 어떤 양식이든 항상 임베드 (아이콘·콜아웃 이모지 두부 방지)
+  const emojiAbs = path.join(FONTS_DIR, 'NotoEmoji-Regular.woff2');
+  if (fs.existsSync(emojiAbs)) {
+    const data = fs.readFileSync(emojiAbs).toString('base64');
+    faces.push(
+      `@font-face { font-family: 'Noto Emoji'; font-weight: 400;` +
+        ` src: url(data:font/woff2;base64,${data}) format('woff2'); font-display: block; }`
+    );
+  }
   for (const font of selected) {
     for (const [weight, file] of Object.entries(font.files || {})) {
       const abs = path.join(FONTS_DIR, file);
