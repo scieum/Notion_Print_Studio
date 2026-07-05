@@ -57,6 +57,26 @@ export default function App() {
           <Editor page={page} onReconnect={() => setMe(null)} />
         )}
       </main>
+
+      {/* 푸터 — 에디터 화면에서는 작업 공간 확보를 위해 숨김 */}
+      {!page && (
+        <footer
+          className="flex-none flex items-center justify-center gap-2 h-10 border-t text-xs text-placeholder"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <span>© 2026 NotionTalk. All rights reserved.</span>
+          <span aria-hidden>·</span>
+          <a
+            href="https://open.kakao.com/o/gpSvPKGg"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+            style={{ color: 'var(--muted)' }}
+          >
+            카카오톡 오픈채팅
+          </a>
+        </footer>
+      )}
     </div>
   );
 }
