@@ -106,73 +106,68 @@ export function templateToCssVars(t) {
     .join('\n  ');
 }
 
+const hfEsc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const hasPageToken = (v) => v.includes('{page}') || v.includes('{total}');
+
 /**
- * 머리말/꼬리말 → Puppeteer headerTemplate/footerTemplate (오픈 이슈 O6 구현).
- * 자리표시자: {page} {total} {title} {date}
- * options.pageNumber=true인데 아무 필드에도 {page}가 없으면
- * hf.pageNumberFormat에 따라 꼬리말 가운데에 쪽번호를 자동 삽입한다.
+ * 쪽번호 꼬리말 → Puppeteer footerTemplate (숫자만이라 폰트 문제 없음).
+ * options.pageNumber=true이고 사용자 필드에 {page} 토큰이 없을 때 자동 삽입한다.
+ * 커스텀 텍스트 머리말/꼬리말은 buildRunningBanners가 본문에 넣는다(한글 폰트 위해).
  */
-export function buildHeaderFooter(template, title = '') {
+export function buildHeaderFooter(template) {
   const hf = template.hf || {};
-  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const sub = (text) =>
-    esc(text)
-      .replaceAll('{page}', '<span class="pageNumber"></span>')
-      .replaceAll('{total}', '<span class="totalPages"></span>')
-      .replaceAll('{title}', esc(title))
-      .replaceAll('{date}', '<span class="date"></span>');
+  const fields = [
+    hf.headerLeft, hf.headerCenter, hf.headerRight,
+    hf.footerLeft, hf.footerCenter, hf.footerRight,
+  ].map((v) => v || '');
 
-  const fields = {
-    headerLeft: hf.headerLeft || '', headerCenter: hf.headerCenter || '', headerRight: hf.headerRight || '',
-    footerLeft: hf.footerLeft || '', footerCenter: hf.footerCenter || '', footerRight: hf.footerRight || '',
-  };
-
-  const hasPageToken = Object.values(fields).some((v) => v.includes('{page}'));
-  if (template.options?.pageNumber && !hasPageToken && !fields.footerCenter) {
-    fields.footerCenter = {
-      decimal: '{page}',
-      dash: '- {page} -',
-      fraction: '{page} / {total}',
-    }[hf.pageNumberFormat || 'dash'];
+  const userHasPageToken = fields.some(hasPageToken);
+  if (!template.options?.pageNumber || userHasPageToken) {
+    return { displayHeaderFooter: false, headerTemplate: '<span></span>', footerTemplate: '<span></span>' };
   }
 
   const fontSize = hf.fontSize || 9;
-  // Chromium 머리말/꼬리말 템플릿은 본문과 별개 문서라 본문 @font-face를 상속받지 못한다.
-  // → 한글 폰트(Noto Sans KR)를 각 템플릿에 직접 인라인해야 한글 머리말/꼬리말이 렌더된다.
-  const hfFontFace = headerFooterFontFace();
-  // Chromium 머리말/꼬리말은 스타일 상속이 없어 전부 인라인으로 지정해야 한다
-  const bar = (left, center, right) =>
-    `${hfFontFace}<div style="width:100%; font-size:${fontSize}pt; color:#444; padding:0 10mm;
-        display:flex; align-items:center; font-family:'Noto Sans KR','Malgun Gothic',sans-serif;">
-       <span style="flex:1; text-align:left;">${sub(left)}</span>
-       <span style="flex:1; text-align:center;">${sub(center)}</span>
-       <span style="flex:1; text-align:right;">${sub(right)}</span>
-     </div>`;
-
-  const hasHeader = fields.headerLeft || fields.headerCenter || fields.headerRight;
-  const hasFooter = fields.footerLeft || fields.footerCenter || fields.footerRight;
-
+  const pn = '<span class="pageNumber"></span>';
+  const tot = '<span class="totalPages"></span>';
+  const center = { decimal: pn, dash: `- ${pn} -`, fraction: `${pn} / ${tot}` }[hf.pageNumberFormat || 'dash'];
   return {
-    displayHeaderFooter: !!(hasHeader || hasFooter),
-    headerTemplate: hasHeader ? bar(fields.headerLeft, fields.headerCenter, fields.headerRight) : '<span></span>',
-    footerTemplate: hasFooter ? bar(fields.footerLeft, fields.footerCenter, fields.footerRight) : '<span></span>',
+    displayHeaderFooter: true,
+    headerTemplate: '<span></span>',
+    footerTemplate: `<div style="width:100%; text-align:center; font-size:${fontSize}pt; color:#444;">${center}</div>`,
   };
 }
 
-// 머리말/꼬리말 템플릿에 인라인할 한글 @font-face (모듈 로드 후 1회만 base64 인코딩)
-let _hfFontFace = null;
-function headerFooterFontFace() {
-  if (_hfFontFace !== null) return _hfFontFace;
-  try {
-    const abs = path.join(FONTS_DIR, 'NotoSansKR-Regular.woff2');
-    const data = fs.readFileSync(abs).toString('base64');
-    _hfFontFace =
-      `<style>@font-face { font-family: 'Noto Sans KR'; font-weight: 400;` +
-      ` src: url(data:font/woff2;base64,${data}) format('woff2'); }</style>`;
-  } catch {
-    _hfFontFace = '';
-  }
-  return _hfFontFace;
+/**
+ * 커스텀 텍스트 머리말/꼬리말 → 본문 문서에 삽입할 position:fixed 배너 HTML.
+ * Chromium 머리말/꼬리말 템플릿은 본문과 별개 문서라 임베드 폰트를 못 써 한글이 두부가 된다.
+ * 본문 안 러닝 요소로 넣으면 본문 @font-face(한글 폰트)를 그대로 상속한다.
+ * {page}/{total}은 CSS로 못 내므로 쪽번호는 buildHeaderFooter(Chromium)가 담당한다.
+ */
+export function buildRunningBanners(template, title = '', dateStr = '') {
+  const hf = template.hf || {};
+  const sub = (text) =>
+    hfEsc(text)
+      .replaceAll('{title}', hfEsc(title))
+      .replaceAll('{date}', hfEsc(dateStr))
+      .replaceAll('{page}', '')
+      .replaceAll('{total}', '');
+
+  const bar = (pos, l, c, r) => {
+    if (!l && !c && !r) return '';
+    return (
+      `<div class="run-bar run-${pos}">` +
+      `<span class="run-cell" style="text-align:left">${sub(l)}</span>` +
+      `<span class="run-cell" style="text-align:center">${sub(c)}</span>` +
+      `<span class="run-cell" style="text-align:right">${sub(r)}</span>` +
+      `</div>`
+    );
+  };
+
+  return {
+    fontSize: hf.fontSize || 9,
+    headerHtml: bar('header', hf.headerLeft || '', hf.headerCenter || '', hf.headerRight || ''),
+    footerHtml: bar('footer', hf.footerLeft || '', hf.footerCenter || '', hf.footerRight || ''),
+  };
 }
 
 /** 용지 크기 → Puppeteer page.pdf() 옵션 (여백은 mm로 전달) */

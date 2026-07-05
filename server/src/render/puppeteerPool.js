@@ -1,9 +1,7 @@
-import path from 'node:path';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import { pdfPageOptions, buildHeaderFooter } from './cssVars.js';
 import { getImageFile } from '../cache/imageCache.js';
-import { FONTS_DIR } from '../config.js';
 
 /**
  * 서버리스(Vercel) PDF 렌더: puppeteer-core + @sparticuz/chromium.
@@ -26,13 +24,6 @@ async function launchBrowser() {
       executablePath: localExec,
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none'],
     });
-  }
-  // 한글 폰트를 Chromium 시스템(fontconfig)에 등록 — 머리말/꼬리말 템플릿은 본문 문서와
-  // 분리돼 @font-face를 못 쓰므로, 시스템 폰트로 등록해야 한글 머리말/꼬리말이 렌더된다.
-  try {
-    await chromium.font(path.join(FONTS_DIR, 'NotoSansKR-Regular.otf'));
-  } catch {
-    /* 폰트 등록 실패해도 본문(@font-face)은 정상 — 머리말/꼬리말 한글만 영향 */
   }
   // 서버리스: @sparticuz/chromium 번들 바이너리 (headless shell — chromium.headless 권장값 사용).
   return puppeteer.launch({
@@ -70,8 +61,9 @@ export async function renderPdf({ html, template, title = '', preview = false })
     await interceptCachedImages(page);
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
     const pageOpts = pdfPageOptions(template);
-    // 커스텀 머리말/꼬리말 + 쪽번호를 buildHeaderFooter가 조립 (설계서 O6)
-    const hf = buildHeaderFooter(template, title);
+    // 쪽번호(숫자)만 Chromium 꼬리말로. 커스텀 텍스트 머리말/꼬리말은 htmlBuilder가
+    // 본문 러닝 요소로 넣는다(한글 폰트 상속). buildHeaderFooter는 쪽번호만 반환.
+    const hf = buildHeaderFooter(template);
     // puppeteer 22+는 Uint8Array를 반환 — 매직바이트 검사·res.send가 기대하는 Buffer로 변환
     const pdf = await page.pdf({
       ...pageOpts,

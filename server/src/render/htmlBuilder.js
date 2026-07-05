@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { templateToCssVars, buildFontFaces } from './cssVars.js';
+import { templateToCssVars, buildFontFaces, buildRunningBanners } from './cssVars.js';
 
 const require = createRequire(import.meta.url);
 
@@ -227,6 +227,15 @@ export function buildHtml({ title, blocks, template, baseUrl }) {
   const ctx = { template, counters: { 1: 0, 2: 0, 3: 0 }, baseUrl };
   const body = renderBlocks(blocks, ctx);
 
+  // 인쇄 날짜(KST 근사) → {date} 치환
+  const kst = new Date(Date.now() + 9 * 3600 * 1000);
+  const dateStr = `${kst.getUTCFullYear()}. ${kst.getUTCMonth() + 1}. ${kst.getUTCDate()}.`;
+  const banners = buildRunningBanners(template, title, dateStr);
+  const m = template.page?.margin || { top: 20, bottom: 20, left: 20, right: 20 };
+  // 러닝 배너를 상/하단 여백 영역에 배치: fixed 기준(콘텐츠 영역)에서 여백만큼 위/아래로 올린다
+  const headerTop = Math.max(m.top * 0.45, 5);
+  const footerBottom = Math.max(m.bottom * 0.45, 5);
+
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -237,6 +246,12 @@ ${katexCss}
 :root {
   ${templateToCssVars(template)}
 }
+.run-bar { position: fixed; left: ${m.left}mm; right: ${m.right}mm; display: flex; gap: 0.5em;
+  font-size: ${banners.fontSize}pt; color: #444; font-family: var(--font-body); line-height: 1.2;
+  letter-spacing: normal; text-align: left; }
+.run-header { top: calc(-${m.top}mm + ${headerTop}mm); }
+.run-footer { bottom: calc(-${m.bottom}mm + ${footerBottom}mm); }
+.run-cell { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { background: var(--paper-bg); }
 body {
@@ -303,6 +318,8 @@ a { color: inherit; }
 </style>
 </head>
 <body>
+${banners.headerHtml}
+${banners.footerHtml}
 <div class="doc-title">${esc(title)}</div>
 ${body}
 </body>
