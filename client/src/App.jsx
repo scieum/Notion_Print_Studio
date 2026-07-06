@@ -70,9 +70,17 @@ export default function App() {
             href="https://open.kakao.com/o/gpSvPKGg"
             target="_blank"
             rel="noreferrer"
-            className="hover:underline"
+            className="flex items-center gap-1 hover:underline"
             style={{ color: 'var(--muted)' }}
           >
+            {/* 브랜드 로고라 예외적으로 고유 색(카카오 옐로우) 유지 — currentColor 상속 안 함 */}
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden focusable="false">
+              <rect width="24" height="24" rx="7" fill="#FEE500" />
+              <path
+                d="M12 5.5c-4.28 0-7.75 2.78-7.75 6.2 0 2.19 1.4 4.12 3.52 5.23-.15.57-.56 2.07-.64 2.39-.1.4.15.39.31.29.13-.09 2.08-1.41 2.92-1.99.52.07 1.05.11 1.64.11 4.28 0 7.75-2.78 7.75-6.2S16.28 5.5 12 5.5z"
+                fill="#3C1E1E"
+              />
+            </svg>
             카카오톡 오픈채팅
           </a>
         </footer>

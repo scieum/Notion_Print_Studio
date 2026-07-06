@@ -15,6 +15,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "katex": "^0.16.11",
+    "opentype.js": "^2.0.0",
     "puppeteer-core": "^25.3.0",
     "zod": "^3.23.8"
   }

@@ -61,9 +61,10 @@ export async function renderPdf({ html, template, title = '', preview = false })
     await interceptCachedImages(page);
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
     const pageOpts = pdfPageOptions(template);
-    // 쪽번호(숫자)만 Chromium 꼬리말로. 커스텀 텍스트 머리말/꼬리말은 htmlBuilder가
-    // 본문 러닝 요소로 넣는다(한글 폰트 상속). buildHeaderFooter는 쪽번호만 반환.
-    const hf = buildHeaderFooter(template);
+    // 인쇄 날짜(KST 근사) → 머리말/꼬리말의 {date} 치환
+    const kst = new Date(Date.now() + 9 * 3600 * 1000);
+    const dateStr = `${kst.getUTCFullYear()}. ${kst.getUTCMonth() + 1}. ${kst.getUTCDate()}.`;
+    const hf = buildHeaderFooter(template, title, dateStr);
     // puppeteer 22+는 Uint8Array를 반환 — 매직바이트 검사·res.send가 기대하는 Buffer로 변환
     const pdf = await page.pdf({
       ...pageOpts,

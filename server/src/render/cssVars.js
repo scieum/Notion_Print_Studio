@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { FONTS_DIR } from '../config.js';
+import { textToSvg } from './koreanGlyphs.js';
 
 // require로 읽어야 Vercel 번들러(nft)가 JSON을 함수 번들에 포함시킨다
 const require = createRequire(import.meta.url);
@@ -106,67 +107,76 @@ export function templateToCssVars(t) {
     .join('\n  ');
 }
 
-const hfEsc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const hasPageToken = (v) => v.includes('{page}') || v.includes('{total}');
 
 /**
- * 쪽번호 꼬리말 → Puppeteer footerTemplate (숫자만이라 폰트 문제 없음).
- * options.pageNumber=true이고 사용자 필드에 {page} 토큰이 없을 때 자동 삽입한다.
- * 커스텀 텍스트 머리말/꼬리말은 buildRunningBanners가 본문에 넣는다(한글 폰트 위해).
+ * 커스텀 텍스트(제목/날짜 토큰 치환 후) → 세그먼트 배열. {page}/{total}은 Chromium이 렌더 시점에
+ * 실제 페이지 수를 채워 넣는 라이브 토큰이라 정적 SVG로 구울 수 없어, 텍스트를 그 토큰 기준으로
+ * 잘라 한글 부분만 opentype.js SVG로, 숫자 토큰은 Chromium 네이티브 span으로 남긴다.
  */
-export function buildHeaderFooter(template) {
-  const hf = template.hf || {};
-  const fields = [
-    hf.headerLeft, hf.headerCenter, hf.headerRight,
-    hf.footerLeft, hf.footerCenter, hf.footerRight,
-  ].map((v) => v || '');
+function renderField(text, fontSizePx, color) {
+  if (!text) return '';
+  return text
+    .split(/(\{page\}|\{total\})/g)
+    .filter((s) => s !== '')
+    .map((part) => {
+      if (part === '{page}') {
+        return `<span class="pageNumber" style="font-size:${fontSizePx}px; font-family:Arial,sans-serif; color:${color}; vertical-align:middle;"></span>`;
+      }
+      if (part === '{total}') {
+        return `<span class="totalPages" style="font-size:${fontSizePx}px; font-family:Arial,sans-serif; color:${color}; vertical-align:middle;"></span>`;
+      }
+      return textToSvg(part, fontSizePx, color);
+    })
+    .join('');
+}
 
-  const userHasPageToken = fields.some(hasPageToken);
-  if (!template.options?.pageNumber || userHasPageToken) {
+/**
+ * 머리말/꼬리말 → Puppeteer headerTemplate/footerTemplate.
+ * Chromium 머리말/꼬리말 템플릿은 본문과 별개 문서라 임베드 폰트(@font-face)를 못 써
+ * 한글이 두부로 나온다 — 그래서 텍스트를 opentype.js로 벡터 패스(SVG)로 직접 그려 심는다.
+ * (본문 안에 position:fixed 러닝 배너를 넣는 이전 방식은 Chromium 인쇄 시 페이지마다
+ * 정확히 반복되지 않고 위치가 어긋나 폐기했다.)
+ */
+export function buildHeaderFooter(template, title = '', dateStr = '') {
+  const hf = template.hf || {};
+  const sub = (text) => (text || '').replaceAll('{title}', title).replaceAll('{date}', dateStr);
+  const fields = {
+    headerLeft: sub(hf.headerLeft), headerCenter: sub(hf.headerCenter), headerRight: sub(hf.headerRight),
+    footerLeft: sub(hf.footerLeft), footerCenter: sub(hf.footerCenter), footerRight: sub(hf.footerRight),
+  };
+
+  const userHasPageToken = Object.values(fields).some(hasPageToken);
+  if (template.options?.pageNumber && !userHasPageToken) {
+    const pn = '{page}';
+    const tot = '{total}';
+    fields.footerCenter = { decimal: pn, dash: `- ${pn} -`, fraction: `${pn} / ${tot}` }[hf.pageNumberFormat || 'dash'];
+  }
+
+  const hasHeader = fields.headerLeft || fields.headerCenter || fields.headerRight;
+  const hasFooter = fields.footerLeft || fields.footerCenter || fields.footerRight;
+  if (!hasHeader && !hasFooter) {
     return { displayHeaderFooter: false, headerTemplate: '<span></span>', footerTemplate: '<span></span>' };
   }
 
   const fontSize = hf.fontSize || 9;
-  const pn = '<span class="pageNumber"></span>';
-  const tot = '<span class="totalPages"></span>';
-  const center = { decimal: pn, dash: `- ${pn} -`, fraction: `${pn} / ${tot}` }[hf.pageNumberFormat || 'dash'];
+  const fontSizePx = fontSize * (96 / 72);
+  const m = template.page?.margin || { left: 20, right: 20 };
+  const pxPerMm = 96 / 25.4;
+  const padLeft = (m.left || 0) * pxPerMm;
+  const padRight = (m.right || 0) * pxPerMm;
+
+  const bar = (l, c, r) => `<div style="width:100%; box-sizing:border-box; padding:0 ${padRight}px 0 ${padLeft}px;
+    display:flex; align-items:center; font-size:0;">
+    <span style="flex:1; text-align:left; white-space:nowrap;">${renderField(l, fontSizePx, '#444')}</span>
+    <span style="flex:1; text-align:center; white-space:nowrap;">${renderField(c, fontSizePx, '#444')}</span>
+    <span style="flex:1; text-align:right; white-space:nowrap;">${renderField(r, fontSizePx, '#444')}</span>
+  </div>`;
+
   return {
     displayHeaderFooter: true,
-    headerTemplate: '<span></span>',
-    footerTemplate: `<div style="width:100%; text-align:center; font-size:${fontSize}pt; color:#444;">${center}</div>`,
-  };
-}
-
-/**
- * 커스텀 텍스트 머리말/꼬리말 → 본문 문서에 삽입할 position:fixed 배너 HTML.
- * Chromium 머리말/꼬리말 템플릿은 본문과 별개 문서라 임베드 폰트를 못 써 한글이 두부가 된다.
- * 본문 안 러닝 요소로 넣으면 본문 @font-face(한글 폰트)를 그대로 상속한다.
- * {page}/{total}은 CSS로 못 내므로 쪽번호는 buildHeaderFooter(Chromium)가 담당한다.
- */
-export function buildRunningBanners(template, title = '', dateStr = '') {
-  const hf = template.hf || {};
-  const sub = (text) =>
-    hfEsc(text)
-      .replaceAll('{title}', hfEsc(title))
-      .replaceAll('{date}', hfEsc(dateStr))
-      .replaceAll('{page}', '')
-      .replaceAll('{total}', '');
-
-  const bar = (pos, l, c, r) => {
-    if (!l && !c && !r) return '';
-    return (
-      `<div class="run-bar run-${pos}">` +
-      `<span class="run-cell" style="text-align:left">${sub(l)}</span>` +
-      `<span class="run-cell" style="text-align:center">${sub(c)}</span>` +
-      `<span class="run-cell" style="text-align:right">${sub(r)}</span>` +
-      `</div>`
-    );
-  };
-
-  return {
-    fontSize: hf.fontSize || 9,
-    headerHtml: bar('header', hf.headerLeft || '', hf.headerCenter || '', hf.headerRight || ''),
-    footerHtml: bar('footer', hf.footerLeft || '', hf.footerCenter || '', hf.footerRight || ''),
+    headerTemplate: hasHeader ? bar(fields.headerLeft, fields.headerCenter, fields.headerRight) : '<span></span>',
+    footerTemplate: hasFooter ? bar(fields.footerLeft, fields.footerCenter, fields.footerRight) : '<span></span>',
   };
 }
 
